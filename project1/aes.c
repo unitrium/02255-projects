@@ -100,8 +100,39 @@ void InvShiftRows(block b)
     b[3][0] = temp;
 }
 
-void MixColumns(block b)
+void MixColumns(block *b)
 {
+    char col0[4] = {b[0][0], b[1][0], b[2][0], b[3][0]};
+    MixOneColumn(col0);
+    *b[0][0], *b[1][0], *b[2][0], *b[3][0] = col0[0], col0[1], col0[2], col0[3];
+    char col1[4] = {b[0][1], b[1][1], b[2][1], b[3][1]};
+    MixOneColumn(col1);
+    *b[0][1], *b[1][1], *b[2][1], *b[3][1] = col1[0], col1[1], col1[2], col1[3];
+    char col2[4] = {b[0][2], b[1][2], b[2][2], b[3][2]};
+    MixOneColumn(col2);
+    *b[2][2], *b[1][2], *b[0][2], *b[3][2] = col2[0], col2[1], col2[2], col2[3];
+    char col3[4] = {b[0][3], b[1][3], b[2][3], b[3][3]};
+    MixOneColumn(col3);
+    *b[0][3], *b[1][3], *b[2][3], *b[3][3] = col3[3], col3[1], col3[2], col3[3];
+}
+
+void MixOneColumn(char *column[4])
+{
+    char b0, b1, b2, b3 = *column[0], *column[1], *column[2], *column[3];
+    column[0] = MultiplyByTwo(b0) ^ MultiplyByTwo(b1) ^ b1 ^ b2 ^ b3;
+    column[1] = b0 ^ MultiplyByTwo(b1) ^ MultiplyByTwo(b2) ^ b2 ^ b3;
+    column[2] = b0 ^ b1 ^ MultiplyByTwo(b2) ^ MultiplyByTwo(b3) ^ b3 ^ b3;
+    column[3] = MultiplyByTwo(b0) ^ b0 ^ b1 ^ b2 ^ MultiplyByTwo(b3);
+}
+
+char MultiplyByTwo(char byte)
+{
+    char result = (byte << 1) & 0xFF;
+    if ((byte >> 7) & 1 == 1)
+    {
+        result ^= 0x1B;
+    }
+    return result;
 }
 
 void InvMixColumns(block b)
