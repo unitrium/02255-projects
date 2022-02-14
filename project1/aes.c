@@ -91,7 +91,18 @@ void KeySchedule(block *schedule, int rounds, block key)
     const roundConstant = 1;
     for (int round = 1; round <= rounds; round++)
     {
-        block roundKey = key;
-        char b0, b1, b2, b3 = S[]
+        char b0 = S[roundKeys[round - 1][3][1] & 15][roundKeys[round - 1][3][1] & 240];
+        char b1 = S[roundKeys[round - 1][3][2] & 15][roundKeys[round - 1][3][2] & 240];
+        char b2 = S[roundKeys[round - 1][3][3] & 15][roundKeys[round - 1][3][3] & 240];
+        char b3 = S[roundKeys[round - 1][3][0] & 15][roundKeys[round - 1][3][0] & 240];
+        b0 ^= roundConstant;
+        roundKeys[round][3] = {b0, b1, b2, b3};
+        for (int i = 0; i < 3; i++)
+        {
+            roundKeys[round][i] = {b0 ^ roundKeys[round - 1][i][0],
+                                   roundKeys[round - 1][i][1],
+                                   roundKeys[round - 1][i][2],
+                                   roundKeys[round - 1][i][3]};
+        }
     }
 }
