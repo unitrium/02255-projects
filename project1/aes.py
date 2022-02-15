@@ -56,7 +56,7 @@ def alpha_set():
     return(alpha_set)
 
 
-def encrypt(plaintext, key):
+def encrypt(plaintext: List[List[int]], key: List[List[int]]):
     """Encrypt a plaintext."""
     round_keys = key_schedule_128(key)
     state = add_round_key(plaintext, round_keys[0])
@@ -73,6 +73,18 @@ def encrypt(plaintext, key):
     print("The key is : ", round_keys[ROUNDS])
     print("The FINAL ciphertext is : ", ciphertext)
     return ciphertext
+
+
+def decrypt(ciphertext:  List[List[int]], key: List[List[int]]):
+    """Decrypt a ciphertext."""
+    round_keys = key_schedule_128(key)
+    state = add_round_key(ciphertext, round_keys[-1])
+    state = sub_bytes(shift_rows(state, inv=True), inv=True)
+    for rnd in range(ROUNDS-2, 0, -1):
+        state = add_round_key(state, round_keys[rnd])
+        state = sub_bytes(shift_rows(mix_columns(
+            state, inv=True), inv=True), inv=True)
+    state = add_round_key(state, round_keys[0])
 
 
 def normal_round(state, round_key):
@@ -115,12 +127,13 @@ def shift_rows(state: List[List[int]], inv=False) -> List[List[int]]:
     return new_state
 
 
-def mix_columns(state: List[List[int]]) -> List[List[int]]:
+def mix_columns(state: List[List[int]], inv=False) -> List[List[int]]:
     """Apply the MixColumns step to the state."""
-    col0 = mix_one_column([state[0][0], state[1][0], state[2][0], state[3][0]])
-    col1 = mix_one_column([state[0][1], state[1][1], state[2][1], state[3][1]])
-    col2 = mix_one_column([state[0][2], state[1][2], state[2][2], state[3][2]])
-    col3 = mix_one_column([state[0][3], state[1][3], state[2][3], state[3][3]])
+    mix = inverse_mix_one_column if inv else mix_one_column
+    col0 = mix([state[0][0], state[1][0], state[2][0], state[3][0]])
+    col1 = mix([state[0][1], state[1][1], state[2][1], state[3][1]])
+    col2 = mix([state[0][2], state[1][2], state[2][2], state[3][2]])
+    col3 = mix([state[0][3], state[1][3], state[2][3], state[3][3]])
     return [
         [col0[0], col1[0], col2[0], col3[0]],
         [col0[1], col1[1], col2[1], col3[1]],
@@ -129,12 +142,42 @@ def mix_columns(state: List[List[int]]) -> List[List[int]]:
     ]
 
 
-def multiply_by_two(byte: int):
+def multiply_by_two(byte: int) -> int:
     """Multiply byte by two, reducing the result with the Rijndael polynomial."""
     result = (byte << 1) & 0xFF
     if (byte >> 7) & 1 == 1:
         result ^= 0x1B
     return result
+
+
+def multiply_by_nine(byte: int) -> int:
+    """Shortcut for multiply by nine."""
+    return multiply_by_eight(byte) ^ byte
+
+
+def multiply_by_eleven(byte: int) -> int:
+    """Shortcut for multiply by 11."""
+    return multiply_by_two(multiply_by_four(byte) ^ byte) ^ byte
+
+
+def multiply_by_thirteen(byte: int) -> int:
+    """Shortcut for 13."""
+    return multiply_by_four(multiply_by_two(byte) ^ byte) ^ byte
+
+
+def multiply_by_fourteen(byte: int) -> int:
+    """Shortcut for 14."""
+    return multiply_by_two(multiply_by_two(multiply_by_two(byte) ^ byte) ^ byte)
+
+
+def multiply_by_four(byte: int) -> int:
+    """Shortcut for multiply by four."""
+    return multiply_by_two(multiply_by_two(byte))
+
+
+def multiply_by_eight(byte: int) -> int:
+    """Shortcut for multiply by eight."""
+    return multiply_by_two(multiply_by_four(byte))
 
 
 def mix_one_column(col: List[int]) -> List[int]:
@@ -154,6 +197,29 @@ def mix_one_column(col: List[int]) -> List[int]:
         multiply_by_two(b_0) ^ b_0 ^  # 03 * b_0
         b_1 ^ b_2 ^                  # 01 * b_1 + 01 * b_2
         multiply_by_two(b_3),        # 02 * b_3
+    ]
+
+
+def inverse_mix_one_column(col: List[int]) -> List[int]:
+    """Multiply a column with the inverse MixColumns matrix."""
+    b_0, b_1, b_2, b_3 = col
+    return [
+        multiply_by_fourteen(b_0) ^
+        multiply_by_eleven(b_1) ^
+        multiply_by_thirteen(b_2) ^
+        multiply_by_nine(b_3),
+        multiply_by_nine(b_0) ^
+        multiply_by_fourteen(b_1) ^
+        multiply_by_eleven(b_2) ^
+        multiply_by_thirteen(b_3),
+        multiply_by_thirteen(b_0) ^
+        multiply_by_nine(b_1) ^
+        multiply_by_fourteen(b_2) ^
+        multiply_by_eleven(b_3),
+        multiply_by_eleven(b_0) ^
+        multiply_by_thirteen(b_1) ^
+        multiply_by_nine(b_2) ^
+        multiply_by_fourteen(b_3),
     ]
 
 
