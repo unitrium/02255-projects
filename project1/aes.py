@@ -3,65 +3,17 @@ from copy import deepcopy
 from typing import List
 from collections import deque
 from sbox import SBOX, INVSBOX
+
 ROUNDS = 4
-
-
-def main():
-    """Test the implementation with some test vectors."""
-    # Test basic funtions
-    assert multiply_by_two(0x80) == 0x1B
-    assert mix_one_column([0xDB, 0x13, 0x53, 0x45]) == [0x8E, 0x4D, 0xA1, 0xBC]
-
-    # Test round transformations
-    before_sub_bytes = [0x19, 0x3D, 0xE3, 0xBE, 0xA0, 0xF4, 0xE2, 0x2B,
-                        0x9A, 0xC6, 0x8D, 0x2A, 0xE9, 0xF8, 0x48, 0x08]
-    after_sub_bytes = [0xD4, 0x27, 0x11, 0xAE, 0xE0, 0xBF, 0x98, 0xF1,
-                       0xB8, 0xB4, 0x5D, 0xE5, 0x1E, 0x41, 0x52, 0x30]
-    after_shift_rows = [0xD4, 0xBF, 0x5D, 0x30, 0xE0, 0xB4, 0x52, 0xAE,
-                        0xB8, 0x41, 0x11, 0xF1, 0x1E, 0x27, 0x98, 0xE5]
-    after_mix_columns = [0x04, 0x66, 0x81, 0xE5, 0xE0, 0xCB, 0x19, 0x9A,
-                         0x48, 0xF8, 0xD3, 0x7A, 0x28, 0x06, 0x26, 0x4C]
-    assert sub_bytes(before_sub_bytes) == after_sub_bytes
-    assert shift_rows(after_sub_bytes) == after_shift_rows
-    assert mix_columns(after_shift_rows) == after_mix_columns
-
-    # Test full encryption
-    plaintext = [0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D,
-                 0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37, 0x07, 0x34]
-    key = [0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6,
-           0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C]
-    ciphertext = [0x39, 0x25, 0x84, 0x1D, 0x02, 0xDC, 0x09, 0xFB,
-                  0xDC, 0x11, 0x85, 0x97, 0x19, 0x6A, 0x0B, 0x32]
-    # assert encrypt(plaintext, key) == ciphertext
-    # return(ciphertext)
-    print("The plaintext is : ", plaintext)
-    return(encrypt(plaintext, key))
-
-
-def main_2():
-    plaintext = [0x0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    key = [0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6,
-           0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C]
-    print("The plaintext is : ", plaintext)
-    return(encrypt(plaintext, key))
 
 
 def encrypt(plaintext: List[List[int]], key: List[List[int]]):
     """Encrypt a plaintext."""
     round_keys = key_schedule_128(key)
     state = add_round_key(plaintext, round_keys[0])
-    print("\n-------- Round 0 -------- ")
-    print("The key is : ", round_keys[0])
-    print("The ciphertext is : ", state)
     for rnd in range(ROUNDS - 1):
         state = normal_round(state, round_keys[rnd + 1])
-        print("\n-------- Round", rnd+1, "-------- ")
-        print("The key is : ", round_keys[rnd + 1])
-        print("The ciphertext is : ", state)
-    ciphertext = last_round(state, round_keys[ROUNDS])
-    print("\n-------- Round", ROUNDS, "-------- ")
-    print("The key is : ", round_keys[ROUNDS])
-    print("The FINAL ciphertext is : ", ciphertext)
+    ciphertext = last_round(state, round_keys[ROUNDS-1])
     return ciphertext
 
 
@@ -87,11 +39,12 @@ def last_round(state, round_key):
     return add_round_key(shift_rows(sub_bytes(state)), round_key)
 
 
-def add_round_key(state, round_key):
+def add_round_key(state: List[List[int]], round_key: List[List[int]]) -> List[List[int]]:
     """Apply the AddRoundKey step to the state."""
-    new_state = []
-    for i in range(16):
-        new_state.append(state[i] ^ round_key[i])
+    new_state = [[0] * 4]*4
+    for i in range(4):
+        for j in range(4):
+            new_state[i][j] = state[i][j] ^ round_key[i][j]
     return new_state
 
 
@@ -112,7 +65,8 @@ def shift_rows(state: List[List[int]], inv=False) -> List[List[int]]:
     sign = -1 if inv else 1
     new_state = [[], [], [], []]
     for i in range(4):
-        line = deque(state[i]).rotate(sign * i)
+        line = deque(state[i])
+        line.rotate(sign * i)
         new_state[i] = list(line)
     return new_state
 
@@ -235,10 +189,10 @@ def key_schedule_128(key: List[List[int]]):
         b_0 ^= round_constant
         round_constant = multiply_by_two(round_constant)
         new_round_key = [[
-            round_keys[i-1][0] ^ b_0,
-            round_keys[i-1][1] ^ b_1,
-            round_keys[i-1][2] ^ b_2,
-            round_keys[i-1][3] ^ b_3,
+            round_keys[i-1][0][0] ^ b_0,
+            round_keys[i-1][0][1] ^ b_1,
+            round_keys[i-1][0][2] ^ b_2,
+            round_keys[i-1][0][3] ^ b_3,
         ]]
         for j in range(1, 4):
             new_round_key.append(
@@ -247,7 +201,3 @@ def key_schedule_128(key: List[List[int]]):
             )
         round_keys.append(new_round_key)
     return round_keys
-
-
-if __name__ == "__main__":
-    main_2()

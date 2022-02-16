@@ -8,25 +8,25 @@ from utils import KEY
 from aes import encrypt, add_round_key, shift_rows
 
 
-def create_encrypt_alpha_set(state: List[List[int]] = None, activeLine: int = 0, activeColumn: int = 0) -> Set[List[List[int]]]:
+def create_encrypt_alpha_set(state: List[List[int]] = None, activeLine: int = 0, activeColumn: int = 0) -> List[List[List[int]]]:
     """Create an alpha set filled with 0 and encrypt it."""
     if state is None:
         state = [[0] * 4] * 4
     alpha_set = gen_alpha_set(state, activeLine, activeColumn)
-    return set([encrypt(value, KEY) for value in alpha_set])
+    return [encrypt(value, KEY) for value in alpha_set]
 
 
-def gen_alpha_set(state: List[List[int]], activeLine: int = 0, activeColumn: int = 0) -> Set[List[List[int]]]:
+def gen_alpha_set(state: List[List[int]], activeLine: int = 0, activeColumn: int = 0) -> List[List[List[int]]]:
     """Create an alpha set."""
-    alpha_set = set()
+    alpha_set = []
     for i in range(256):
         current = deepcopy(state)
         current[activeLine][activeColumn] = i
-        alpha_set.add(current)
+        alpha_set.append(current)
     return alpha_set
 
 
-def reverse_last_round_on_byte(ciphertext: List[List[int]], round_key: List[List[int]], activeLine: int = 0, activeColumn: int = 0) -> List[List[int]]:
+def reverse_last_round_on_byte(ciphertext: List[List[int]], round_key: List[List[int]], activeLine: int = 0, activeColumn: int = 0) -> int:
     """Reverse the last round on one byte for a given key."""
     state = add_round_key(ciphertext, round_key)
     state = shift_rows(ciphertext, inv=True)
@@ -68,7 +68,9 @@ def guess_last_round_key(ciphertext: List[List[int]]) -> List[List[int]]:
             for byte in range(256):
                 round_key = [[0] * 4] * 4
                 round_key[i][j] = byte
-                state = reverse_last_round_on_byte(ciphertext, round_key, i, j)
+                state = [[0] * 4] * 4
+                state[i][j] = reverse_last_round_on_byte(
+                    ciphertext, round_key, i, j)
                 alpha_set = gen_alpha_set(state, i, j)
                 if check_guess(alpha_set, i, j):
                     key[i][j].append(byte)
@@ -80,8 +82,10 @@ def guess_last_round_key(ciphertext: List[List[int]]) -> List[List[int]]:
                 for byte in key[i][j]:
                     round_key = [[0] * 4] * 4
                     round_key[i][j] = byte
-                    reversed_test_alpha_set = [reverse_last_round_on_byte(
-                        al_set, round_key, i, j) for al_set in test_alpha_set]
+                    reversed_test_alpha_set = [[[0] * 4] * 4] * 256
+                    for index, al_set in enumerate(test_alpha_set):
+                        reversed_test_alpha_set[index][i][j] = reverse_last_round_on_byte(
+                            al_set, round_key, i, j)
                     if not check_guess(reversed_test_alpha_set, i, j):
                         key[i][j].remove(byte)
                 if len(key[i][j]) != 1:
