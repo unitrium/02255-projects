@@ -21,7 +21,7 @@ def gen_alpha_set(column: int) -> List[List[int]]:
     return alpha_set
 
 
-def get_previous_round_key(round_key: List[int], round: int = 4):
+def get_previous_round_key(round_key: List[int], rnd: int = 4):
     """Get the round key of the previous round."""
     previous = create_0_list()
     for col in range(3):
@@ -34,7 +34,7 @@ def get_previous_round_key(round_key: List[int], round: int = 4):
     for i in range(4):
         byte = line[i]
         if i == 0:
-            previous[0] ^= round**2
+            previous[0] ^= rnd**2
         previous[i] = round_key[i] ^ SBOX[(
             byte & 0b11110000) >> 4][byte & 0b00001111]
     return previous
