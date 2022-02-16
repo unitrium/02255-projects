@@ -45,10 +45,11 @@ def check_guess(state: List[List[List[int]]], activeLine: int = 0, activeColumn:
 def get_previous_round_key(round_key: List[List[int]], round: int = 4):
     """Get the round key of the previous round."""
     previous = create_0_matrix()
-    for line in range(3, 1, -1):
+    for line in range(3, 0, -1):
         for col in range(4):
             previous[line][col] = round_key[line][col] ^ round_key[line-1][col]
-    line = deque(previous[3]).rotate(1)
+    line = deque(previous[3])
+    line.rotate(1)
     previous[0] = list(line)
     for i in range(4):
         byte = previous[0][i]

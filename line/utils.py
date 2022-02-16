@@ -8,5 +8,5 @@ KEY = [
 ]
 
 
-def create_0_matrix() -> List[List[int]]:
-    return [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+def create_0_list() -> List[int]:
+    return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

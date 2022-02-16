@@ -219,7 +219,7 @@ def inv_mix_one_column(col: List[int]) -> List[int]:
     ]
 
 
-def key_schedule_128(key):
+def key_schedule_128(key: List[int]) -> List[List[int]]:
     """Create the list of round keys from the key."""
     round_keys = [[key[i] for i in range(16)]]
     round_constant = 1
