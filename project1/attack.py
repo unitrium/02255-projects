@@ -1,7 +1,7 @@
 from copy import deepcopy
 from random import choice
 from collections import deque
-from typing import List, Set
+from typing import List
 
 from sbox import SBOX
 from utils import KEY, create_0_matrix
@@ -29,7 +29,7 @@ def gen_alpha_set(state: List[List[int]], activeLine: int = 0, activeColumn: int
 def reverse_last_round_on_byte(ciphertext: List[List[int]], round_key: List[List[int]], activeLine: int = 0, activeColumn: int = 0) -> int:
     """Reverse the last round on one byte for a given key."""
     state = add_round_key(ciphertext, round_key)
-    state = shift_rows(ciphertext, inv=True)
+    state = shift_rows(state, inv=True)
     return state[activeLine][activeColumn]
 
 
@@ -89,8 +89,11 @@ def guess_last_round_key(ciphertext: List[List[int]]) -> List[List[int]]:
                     if not check_guess(reversed_test_alpha_set, i, j):
                         key[i][j].remove(byte)
                 if len(key[i][j]) != 1:
+                    print(key)
                     raise Exception(
                         f"Number of bytes at position {i}, {j}: {len(key[i][j])}")
+                else:
+                    key[i][j] = key[i][j][0]
     return key
 
 
