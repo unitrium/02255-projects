@@ -49,7 +49,7 @@ def get_previous_round_key(round_key: List[List[int]], round: int = 4):
         for col in range(4):
             previous[line][col] = round_key[line][col] ^ round_key[line-1][col]
     line = deque(previous[3])
-    line.rotate(1)
+    line.rotate(-1)
     previous[0] = list(line)
     for i in range(4):
         byte = previous[0][i]

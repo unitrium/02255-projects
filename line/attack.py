@@ -1,4 +1,4 @@
-from aes import encrypt
+from aes import encrypt, multiply_by_two
 from typing import List
 from utils import KEY, create_0_list
 from collections import deque
@@ -21,20 +21,22 @@ def gen_alpha_set(column: int) -> List[List[int]]:
     return alpha_set
 
 
-def get_previous_round_key(round_key: List[int], rnd: int = 4):
+def get_previous_round_key(round_key: List[int], rnd: int = 3):
     """Get the round key of the previous round."""
     previous = create_0_list()
-    for col in range(3):
+    round_constant = 1
+    for i in range(rnd):
+        round_constant = multiply_by_two(round_constant)
+    for col in range(4):
         for line in range(3, -1, -1):
             previous[4 * line + col] = round_key[4 *
                                                  line + col] ^ round_key[4 * line - 4 + col]
     line = deque(previous[12:])
-    line.rotate(1)
+    line.rotate(-1)
     line = list(line)
     for i in range(4):
-        byte = line[i]
+        byte = SBOX[line[i]]
         if i == 0:
-            previous[0] ^= rnd**2
-        previous[i] = round_key[i] ^ SBOX[(
-            byte & 0b11110000) >> 4][byte & 0b00001111]
+            byte ^= round_constant
+        previous[i] = round_key[i] ^ byte
     return previous

@@ -176,9 +176,9 @@ def multiply_by_eight(byte: int) -> int:
     return multiply_by_two(multiply_by_four(byte))
 
 
-def mix_one_column(col: List[int]) -> List[int]):
+def mix_one_column(col: List[int]) -> List[int]:
     """Multiply a column with the MixColumns matrix."""
-    b_0, b_1, b_2, b_3=col
+    b_0, b_1, b_2, b_3 = col
     return [
         multiply_by_two(b_0) ^       # 02 * b_0
         multiply_by_two(b_1) ^ b_1 ^  # 03 * b_1
