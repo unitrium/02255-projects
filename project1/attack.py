@@ -3,10 +3,9 @@ from random import choice
 from collections import deque
 from typing import List, Set
 
-from project1.sbox import SBOX
-
-from .utils import KEY
-from .aes import encrypt, add_round_key, sub_bytes, mix_columns, shift_rows
+from sbox import SBOX
+from utils import KEY
+from aes import encrypt, add_round_key, shift_rows
 
 
 def create_encrypt_alpha_set(state: List[List[int]] = None, activeLine: int = 0, activeColumn: int = 0) -> Set[List[List[int]]]:

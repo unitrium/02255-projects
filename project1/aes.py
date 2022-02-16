@@ -2,7 +2,7 @@
 from copy import deepcopy
 from typing import List
 from collections import deque
-from .sbox import SBOX, INVSBOX
+from sbox import SBOX, INVSBOX
 ROUNDS = 4
 
 
