@@ -1,4 +1,5 @@
 from copy import deepcopy
+from random import choice
 from collections import deque
 from typing import List, Set
 
@@ -42,11 +43,6 @@ def check_guess(state: List[List[List[int]]], activeLine: int = 0, activeColumn:
     return (sum == 0)
 
 
-def find_correct_key(possible_keys: List[List[List[int]]], ciphertext: List[List[int]]) -> List[List[int]]:
-    """Removes the false positives to return the one true key."""
-    pass
-
-
 def get_previous_round_key(round_key: List[List[int]], round: int = 4):
     """Get the round key of the previous round."""
     previous = [[0] * 4] * 4
@@ -77,7 +73,46 @@ def guess_last_round_key(ciphertext: List[List[int]]) -> List[List[int]]:
                 alpha_set = gen_alpha_set(state, i, j)
                 if check_guess(alpha_set, i, j):
                     key[i][j].append(byte)
-    return find_correct_key(key, ciphertext)
+            if len(key[i][j]) > 1:
+                line = choice([k for k in range(4) if k != i])
+                col = choice([k for k in range(4) if k != j])
+                test_alpha_set = create_encrypt_alpha_set(
+                    activeLine=line, activeColumn=col)
+                for byte in key[i][j]:
+                    round_key = [[0] * 4] * 4
+                    round_key[i][j] = byte
+                    reversed_test_alpha_set = [reverse_last_round_on_byte(
+                        al_set, round_key, i, j) for al_set in test_alpha_set]
+                    if not check_guess(reversed_test_alpha_set, i, j):
+                        key[i][j].remove(byte)
+                if len(key[i][j]) != 1:
+                    raise Exception(
+                        f"Number of bytes at position {i}, {j}: {len(key[i][j])}")
+    return key
 
 
 def main():
+    """Example usage."""
+    plaintext = [
+        [0x2F, 0x7E, 0x15, 0x16],
+        [0x28, 0xEE, 0xD2, 0xA6],
+        [0xAB, 0xF7, 0x15, 0x98],
+        [0x09, 0xCF, 0x4F, 0x3C]
+    ]
+    ciphertext = encrypt(plaintext, KEY)
+    print(f"Cipher text is : {ciphertext}")
+
+    last_round_key = guess_last_round_key(ciphertext)
+    print(f"Last round key is : {last_round_key}")
+    round_key = last_round_key
+    for i in range(4, 0, -1):
+        round_key = get_previous_round_key(round_key, i)
+
+    print("Obtained round key is:")
+    print(round_key)
+    print("Actual round key is:")
+    print(KEY)
+
+
+if __name__ == "__main__":
+    main()
