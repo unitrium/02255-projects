@@ -1,6 +1,6 @@
 """An implementation of AES-128 in Python."""
 from copy import deepcopy
-from typing import List
+from typing import List, Set
 from collections import deque
 from .sbox import SBOX, INVSBOX
 ROUNDS = 4
@@ -46,14 +46,14 @@ def main_2():
     return(encrypt(plaintext, key))
 
 
-def alpha_set():
+def alpha_set(state: List[List[int]], activeLine: int = 0, activeColumn: int = 0) -> Set[List[List[int]]]:
     """Create an alpha set."""
-    temp = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    alpha_set = [temp]
-    for i in range(1, 256):
-        temp = [i, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        alpha_set.append(temp)
-    return(alpha_set)
+    alpha_set = set()
+    for i in range(256):
+        current = deepcopy(state)
+        current[activeLine][activeColumn] = i
+        alpha_set.add(current)
+    return alpha_set
 
 
 def encrypt(plaintext: List[List[int]], key: List[List[int]]):
