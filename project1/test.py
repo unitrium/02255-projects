@@ -6,7 +6,7 @@ from utils import KEY
 def main():
     """Test some functions."""
     schedule = key_schedule_128(KEY)
-    previous = get_previous_round_key(schedule[-1])
+    previous = get_previous_round_key(schedule[-1], 3)
     assert schedule[-2] == previous
     previous = get_previous_round_key(schedule[-2], 2)
     assert schedule[-3] == previous
