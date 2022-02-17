@@ -23,11 +23,11 @@ def gen_alpha_set(column: int) -> List[List[int]]:
 
 def reverse_last_round_on_byte(ciphertext: List[int], round_key: List[int]) -> List[int]:
     "Reverse the last round on one byte for a given key."
-    "Step 01 : XOR with round key"
+    # Step 01 : XOR with round key
     state = add_round_key(ciphertext, round_key)
-    "Step 02 : Inverse ShiftRow"
+    # Step 02 : Inverse ShiftRow
     state = shift_rows(state, True)
-    "Step 03 : Inverse SubBytes"
+    # Step 03 : Inverse SubBytes
     state = sub_bytes(state, True)
     return(state)
 
@@ -35,7 +35,7 @@ def reverse_last_round_on_byte(ciphertext: List[int], round_key: List[int]) -> L
 def check_guess(last_round_alpha_set: List[List[int]], column: int) -> bool:
     "Check our guess on a round key byte"
     total = 0
-    "We XOR all the 256 values and verify if it's equal to 0"
+    # We XOR all the 256 values and verify if it's equal to 0
     for _, value in enumerate(last_round_alpha_set):
         total ^= value[column]
     return (total == 0)
@@ -44,7 +44,7 @@ def check_guess(last_round_alpha_set: List[List[int]], column: int) -> bool:
 def guess_last_round_key() -> List[int]:
     " Guess the last roundkey with all the delta set. "
     key = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    "Step 01 : for each byte of the round key, we're going to try the delta set with the guessed key"
+    # Step 01 : for each byte of the round key, we're going to try the delta set with the guessed key
     for i in range(16):
         temp_Round = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         temp_key = []
@@ -55,11 +55,11 @@ def guess_last_round_key() -> List[int]:
             for ciphertext in cipher_alpha_set:
                 b.append(shift_rows(
                     reverse_last_round_on_byte(ciphertext, temp_Round)))
-            "Step 02 : Check the guess key"
+            # Step 02 : Check the guess key
             if (check_guess(b, i)):
-                # print("Entrée n°", i)
                 temp_key.append(byte)
-        "Step 03 : Check the number of good guesses, if multiple good choices then supress the wrong one with other delta set"
+        # Step 03 : Check the number of good guesses, if multiple good choices
+        #  then supress the wrong one with other delta set
         if (len(temp_key) > 1):
             test = choice([k for k in range(16) if k not in [i]])
             cipher_alpha_set_2 = create_encrypt_alpha_set(test)
@@ -73,7 +73,6 @@ def guess_last_round_key() -> List[int]:
                     key[i] = item
         else:
             key[i] = temp_key[0]
-    # print(key)
     return (key)
 
 
