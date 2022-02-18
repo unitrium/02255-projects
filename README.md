@@ -1,9 +1,9 @@
 # 02255-projects
 
-#Required python version
+# Required python version
 All this project needs to be run is a version of python > 3.8.
 
-#Relevant files
+# Relevant files
 All project files are in project1
 
 The AES implementation can be found in project1/aes.py.
