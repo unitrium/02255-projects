@@ -12,6 +12,11 @@ def read_traces(filename: str = './traces/T7.dat') -> pd.DataFrame:
     return pd.read_table(filename, sep=",").to_numpy()
 
 
+def hamming_weight(byte: int) -> int:
+    """Calculates the hamming weight of a byte, the number of 1 in the binary representation."""
+    return bin(byte).count('1')
+
+
 if __name__ == "__main__":
     print(read_traces())
     print(read_inputs())
