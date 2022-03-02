@@ -1,8 +1,9 @@
 from math import sqrt
 from typing import List
+import numpy as np
 
 from numpy import average
-from utils import read_inputs
+from utils import read_inputs, read_traces
 from aes import encrypt
 
 
@@ -14,7 +15,7 @@ def gen_h() -> List[List[int]]:
         for key in range(256):
             line.append(encrypt(plaintext, key))
         h.append(line)
-    return h
+    return np.array(h)
 
 
 def coefficient(h: List[int], traces: List[int]) -> int:
@@ -30,3 +31,16 @@ def coefficient(h: List[int], traces: List[int]) -> int:
         deno_right += (traces[i]-avg_t)**2
     denominator = sqrt(deno_left*deno_right)
     return numerator/denominator
+
+
+if __name__ == "__main__":
+    h = gen_h()
+    traces = read_traces()
+    max_coef = 0
+    index = 0
+    for i in range(256):
+        coef = coefficient(h[:, i], traces[i])
+        if coef > max_coef:
+            index = i
+            max_coef = coef
+    print(f"Most likely key:{index}, {coef}")
