@@ -9,7 +9,7 @@ def read_inputs(filename: str = './traces/inputs7.dat'):
 
 def read_traces(filename: str = './traces/T7.dat') -> pd.DataFrame:
     """Read traces."""
-    return pd.read_table(filename, sep=",").to_numpy()
+    return pd.read_table(filename, sep=",")
 
 
 def hamming_weight(byte: int) -> int:
