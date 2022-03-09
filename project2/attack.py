@@ -47,10 +47,10 @@ def attack(inputs_filename: str = './traces/inputs_test.dat', traces_filename: s
     max_coef = 0
     most_likely_key = 0
     # Iterrate over all possible keys.
-    for i in range(256):
-        coef = compute_correlation_coefficient(h[:, i], traces)
+    for key in range(256):
+        coef = compute_correlation_coefficient(h[:, key], traces)
         if coef > max_coef:
-            most_likely_key = i
+            most_likely_key = key
             max_coef = coef
     return max_coef, most_likely_key
 
