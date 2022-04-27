@@ -1,3 +1,4 @@
+"""Lightweight Cryptographic implementation of PRESENT. By Robin TROESCH"""
 from typing import List
 
 encryption = []
