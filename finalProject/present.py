@@ -1,12 +1,8 @@
 """Lightweight Cryptographic implementation of PRESENT. By Robin TROESCH"""
 from typing import List
 
-encryption = []
-decryption = []
-
-
-SBOX = [0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD,
-        0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2]
+SBOX = [0xc, 0x5, 0x6, 0xb, 0x9, 0x0, 0xa, 0xd,
+        0x3, 0xe, 0xf, 0x8, 0x4, 0x7, 0x1, 0x2]
 INVSBOX = [0x5, 0xE, 0xF, 0x8, 0xC, 0x1, 0x2,
            0xD, 0xB, 0x4, 0x6, 0x3, 0x0, 0x7, 0x9, 0xA]
 
@@ -23,19 +19,19 @@ INV_PERMUTATION_BOX = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 
 INV_PERMUTATION_BOX = [PERMUTATION_BOX.index(x) for x in range(64)]
 
 
-def sBoxLayer(state: List[bool], reverse: bool = False):
+def s_box_layer(state: List[bool], reverse: bool = False):
     """Provides the SBOXLayer operation in place on a state."""
     box = INVSBOX if reverse else SBOX
     for i in range(16):
-        word = state[4*i] + state[4*i+1]*2 + state[4*i+2]*4 + state[4*i+3]*8
+        word = state[4*i]*8 + state[4*i+1]*4 + state[4*i+2]*2 + state[4*i+3]
         word = box[word]
-        state[4*i] = word & 0b0001
-        state[4*i+1] = (word & 0b0010) >> 1
-        state[4*i+2] = (word & 0b0100) >> 2
-        state[4*i+3] = (word & 0b1000) >> 3
+        state[4*i+3] = word & 0b0001
+        state[4*i+2] = (word & 0b0010) >> 1
+        state[4*i+1] = (word & 0b0100) >> 2
+        state[4*i] = (word & 0b1000) >> 3
 
 
-def pLayer(state: List[bool], reverse: bool = False) -> List[bool]:
+def p_layer(state: List[bool], reverse: bool = False) -> List[bool]:
     """Provides the permutation layer."""
     box = INV_PERMUTATION_BOX if reverse else PERMUTATION_BOX
     new_state = [0] * 64
@@ -52,33 +48,30 @@ def add_round_key(state: List[bool], roundKey: List[bool]):
 
 def update_registry(key_registry: List[bool], round: int) -> List[bool]:
     """Returns an updated key registry through PRESENT key schedule."""
+    # The registry key is computed as an integer to allow for easier computation.
     new_key_registry = convert_to_int(key_registry)
-    new_key_registry = new_key_registry >> 60
-    new_key_registry = new_key_registry & 0x0FFFFFFFFFFFFFFF | SBOX[(
-        new_key_registry & 0xF000000000000000) >> 60] << 60
-    bit15 = (round & 1) ^ (new_key_registry & 0x8000)  # Extract bit 15
-    bit16 = (round & 1) ^ (new_key_registry & 0x10000)  # Extract bit 16
-    bit17 = (round & 1) ^ (new_key_registry & 0x20000)  # Extract bit 17
-    bit18 = (round & 1) ^ (new_key_registry & 0x40000)  # Extract bit 18
-    bit19 = (round & 1) ^ (new_key_registry & 0x80000)  # Extract bit 19
-    newBits = (bit15 + bit16 * 2 + bit17 * 4 + bit18 * 8 + bit19 * 16) << 15
-    new_key_registry = (new_key_registry & 0xFFFFFFFFFFF07FFF) | newBits
-    return convert_to_bitfield(new_key_registry)
+    new_key_registry = ((new_key_registry & (2 ** 19 - 1))
+                        << 61) + (new_key_registry >> 19)
+    new_key_registry = (SBOX[new_key_registry >> 76] <<
+                        76)+(new_key_registry & (2**76-1))
+    new_key_registry ^= round << 15
+    return convert_to_bitfield(new_key_registry, 80)
 
 
-def convert_to_bitfield(n: int):
+def convert_to_bitfield(n: int, size: int = 64):
     """Converts to an bitwise array representation and adds 0 if necessary."""
     value = [int(digit)
              for digit in bin(n)[2:]]  # [2:] to chop off the "0b" part
-    padding = [0] * (64-len(value))
+    padding = [0] * (size-len(value))
     return padding + value
 
 
 def convert_to_int(bitfield: List[int]):
     """Converts a bitfield to an int."""
     value = 0
-    for i in range(63):
-        value += bitfield[i] * 2**i
+    nb_bits = len(bitfield) - 1
+    for i in range(nb_bits, -1, -1):
+        value += bitfield[nb_bits-i] * 2**i
     return value
 
 
@@ -86,15 +79,13 @@ def encrypt(plaintext: List[bool], key: List[bool]):
     """Encrypts a bitfield plaintext through PRESENT."""
     state = plaintext
     key_registry = key
-    for round in range(31):
+    for i in range(1, 32):
         roundKey = key_registry[:64]
         add_round_key(state, roundKey)
-        sBoxLayer(state)
-        state = pLayer(state)
-        encryption.append(state)
-        key_registry = update_registry(key_registry, round)
+        s_box_layer(state)
+        state = p_layer(state)
+        key_registry = update_registry(key_registry, i)
     add_round_key(state, key_registry[:64])
-    encryption.append(state)
     return state
 
 
@@ -102,7 +93,7 @@ def compute_key_schedule(key: List[bool]) -> List[List[bool]]:
     """For the decryption compute the entire key_schedule."""
     key_registry = key
     schedule = []
-    for round in range(31):
+    for round in range(1, 33):
         schedule.append(key_registry[:64])
         key_registry = update_registry(key_registry, round)
     return schedule
@@ -113,19 +104,17 @@ def decrypt(ciphertext: List[int], key: int):
     schedule = compute_key_schedule(key)
     state = ciphertext
     add_round_key(state, schedule[-1])
-    decryption.append(state)
     for roundKey in reversed(schedule[:-1]):
-        state = pLayer(state, reverse=True)
-        sBoxLayer(state, reverse=True)
+        state = p_layer(state, reverse=True)
+        s_box_layer(state, reverse=True)
         add_round_key(state, roundKey)
-        decryption.append(state)
     return state
 
 
 if __name__ == "__main__":
-    plaintext = convert_to_bitfield(63)
-    key = convert_to_bitfield(20)
+    plaintext = convert_to_bitfield(0)
+    key = convert_to_bitfield(0, 80)
     ciphertext = encrypt(plaintext, key)
     decipheredText = decrypt(ciphertext, key)
-    assert ciphertext != plaintext
-    assert decipheredText == plaintext
+
+    assert convert_to_int(decipheredText) == 0
